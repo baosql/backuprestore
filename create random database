@@ -1,0 +1,11 @@
+DECLARE @databases TABLE (name NVARCHAR(128))
+
+DECLARE @i INT = 1
+WHILE @i <= 1000
+BEGIN
+    DECLARE @name NVARCHAR(128) = CONCAT('database', @i)
+    INSERT INTO @databases (name) VALUES (@name)
+    SET @i += 1
+END
+
+SELECT name FROM @databases
