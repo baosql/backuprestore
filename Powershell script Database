@@ -1,0 +1,27 @@
+# Set the server instance name and output directory
+$serverInstance = "localhost"
+$outputDirectory = "C:\Scripts\"
+
+# Load the SQL Server module
+Import-Module SqlServer
+
+# Connect to the SQL Server instance
+$server = Connect-SqlServer -ServerInstance $serverInstance
+
+# Get a list of all databases on the server
+$databases = Get-SqlDatabase -ServerInstance $serverInstance
+
+# Loop through each database and generate the CREATE statement
+foreach ($database in $databases) {
+    # Generate the CREATE statement
+    $createScript = Get-SqlDatabase -ServerInstance $serverInstance -DatabaseName $database.Name |
+        Select-Object -ExpandProperty Script |
+        Out-String
+
+    # Save the CREATE statement to a file
+    $filename = $outputDirectory + $database.Name + ".sql"
+    Set-Content -Path $filename -Value $createScript
+}
+
+# Disconnect from the SQL Server instance
+Disconnect-SqlServer -ServerInstance $serverInstance
