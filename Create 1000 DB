@@ -1,0 +1,11 @@
+DECLARE @dbName SYSNAME
+DECLARE @sql NVARCHAR(MAX)
+
+DECLARE @i INT = 1
+WHILE @i <= 1000
+BEGIN
+    SET @dbName = CONCAT('database', @i)
+    SET @sql = 'CREATE DATABASE ' + QUOTENAME(@dbName)
+    EXEC (@sql)
+    SET @i += 1
+END
