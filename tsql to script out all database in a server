@@ -1,0 +1,24 @@
+DECLARE @dbName SYSNAME
+DECLARE @sql NVARCHAR(MAX)
+
+SET @sql = ''
+
+DECLARE db_cursor CURSOR FOR
+SELECT name FROM sys.databases WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
+
+OPEN db_cursor
+FETCH NEXT FROM db_cursor INTO @dbName
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @sql += 'USE [' + @dbName + ']' + CHAR(13) + CHAR(10)
+    SET @sql += 'GO' + CHAR(13) + CHAR(10)
+    SET @sql += OBJECT_DEFINITION(OBJECT_ID(@dbName)) + CHAR(13) + CHAR(10) + CHAR(13) + CHAR(10)
+
+    FETCH NEXT FROM db_cursor INTO @dbName
+END
+
+CLOSE db_cursor
+DEALLOCATE db_cursor
+
+PRINT @sql
