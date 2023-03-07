@@ -1,0 +1,22 @@
+DECLARE @dbname VARCHAR(100)
+DECLARE @sql NVARCHAR(MAX)
+SET @sql = ''
+ 
+DECLARE db_cursor CURSOR FOR  
+SELECT name 
+FROM master.dbo.sysdatabases 
+WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
+ 
+OPEN db_cursor  
+FETCH NEXT FROM db_cursor INTO @dbname  
+WHILE @@FETCH_STATUS = 0  
+BEGIN  
+    SET @sql = @sql + 'CREATE DATABASE ' + QUOTENAME(@dbname) + CHAR(13) + CHAR(10) + 'GO' + CHAR(13) + CHAR(10)
+    FETCH NEXT FROM db_cursor INTO @dbname  
+END  
+ 
+CLOSE db_cursor  
+DEALLOCATE db_cursor
+ 
+-- Output the generated SQL script
+PRINT @sql
