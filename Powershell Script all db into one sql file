@@ -1,0 +1,18 @@
+# Load the SQL Server Management Objects (SMO) assembly
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Smo") | Out-Null
+
+# Set up a connection to the SQL Server instance
+$server = New-Object Microsoft.SqlServer.Management.Smo.Server "localhost"
+
+
+# Loop through all databases on the server and generate the CREATE DATABASE statement
+$script = ""
+foreach ($database in $server.Databases) {
+    # Skip system databases
+    if ($database.IsSystemObject -eq $false) {
+        $script += "CREATE DATABASE " + $database.Name + ";`n`n"
+    }
+}
+
+# Save the script to a file
+Set-Content -Path "C:\Temp\MSCreateDatabases.sql" -Value $script
