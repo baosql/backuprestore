@@ -1,0 +1,82 @@
+## Load the SQL Server PowerShell module
+Import-Module SqlServer
+ 
+# Set up a connection to the SQL Server instance
+$serverName = "localhost"
+$serverInstance = "MSSQLSERVER"
+$connectionString = "Server=$serverName\$serverInstance;Database=master;Integrated Security=True;"
+ 
+# Get a list of all SQL Agent jobs on the server
+$jobs = Get-SqlAgentJob -ServerInstance $serverName\$serverInstance
+ 
+# Loop through all SQL Agent jobs and disable them
+foreach ($job in $jobs) {
+    Set-SqlAgentJob -ServerInstance $serverName\$serverInstance -Name $job.Name -Enabled $false
+}
+
+
+## Script to stop SQL Server services and set startup type to manual
+# Set the names of the SQL Server services to stop
+$serviceNames = "MSSQLSERVER", "SQLSERVERAGENT"
+
+# Loop through each service and stop it
+foreach ($serviceName in $serviceNames) {
+    # Stop the service
+    Stop-Service -Name $serviceName -Force
+    
+    # Set the startup type to manual
+    Set-Service -Name $serviceName -StartupType Manual
+}
+
+
+
+## Script to start SQL Server services and set startup type to manual
+# Set the names of the SQL Server services to stop
+$serviceNames = "MSSQLSERVER", "SQLSERVERAGENT"
+
+# Loop through each service and stop it
+foreach ($serviceName in $serviceNames) {
+   
+    # Set the startup type to manual
+    Set-Service -Name $serviceName -StartupType Automatic
+
+     # Stop the service
+    start-Service -Name $serviceName 
+}
+
+
+## Powershell script  to Script out  database into  a .sql file
+
+# Load the SQL Server Management Objects (SMO) assembly
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Smo") | Out-Null
+
+# Set up a connection to the SQL Server instance
+$server = New-Object Microsoft.SqlServer.Management.Smo.Server "localhost"
+
+
+# Loop through all databases on the server and generate the CREATE DATABASE statement
+$script = ""
+foreach ($database in $server.Databases) {
+    # Skip system databases
+    if ($database.IsSystemObject -eq $false) {
+        $script += "CREATE DATABASE " + $database.Name + ";`n`n"
+    }
+}
+
+# Save the script to a file
+Set-Content -Path "C:\Temp\MSCreateDatabases.sql" -Value $script
+
+
+
+## Powershell Script  to  Create the database
+# Set up connection information
+$serverName = "localhost"
+$databaseName = "MyDatabase"
+$username = "MyUsername"
+$password = "MyPassword"
+
+# Set up SQL script file path
+$sqlScriptPath = "C:\Scripts\MySqlScript.sql"
+
+# Call Invoke-Sqlcmd to execute SQL script
+Invoke-Sqlcmd -ServerInstance $serverName -Database $databaseName -Username $username -Password $password -InputFile $sqlScriptPath
