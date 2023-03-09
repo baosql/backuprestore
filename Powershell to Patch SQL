@@ -1,0 +1,13 @@
+# Define variables for the patching
+$instanceName = "MSSQLSERVER"
+$cumulativeUpdatePath = "C:\SQLServer2019-KB5001090-x64.exe"
+
+# Stop SQL Server services
+Stop-Service "MSSQLSERVER" -Force
+
+# Install the cumulative update
+Start-Process -Wait -FilePath $cumulativeUpdatePath `
+    -ArgumentList "/Quiet", "/IAcceptSQLServerLicenseTerms", "/InstanceName=$instanceName"
+
+# Restart SQL Server services
+Start-Service "MSSQLSERVER"
