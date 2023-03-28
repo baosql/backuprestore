@@ -1,0 +1,12 @@
+SELECT 
+    t.NAME AS TableName,
+    p.rows AS TotalRecords
+FROM 
+    sys.tables t
+INNER JOIN 
+    sys.partitions p ON t.object_id = p.object_id
+WHERE 
+    p.index_id IN (1,0)
+ORDER BY 
+    TotalRecords DESC, 
+    TableName ASC;
