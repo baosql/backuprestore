@@ -1,0 +1,32 @@
+-- Create a temporary table to store file information
+CREATE TABLE #FileSpaceInfo (
+    DBName NVARCHAR(255),
+    FileType NVARCHAR(50),
+    FileName NVARCHAR(255),
+    TotalSizeMB DECIMAL(18, 2),
+    UsedSpaceMB DECIMAL(18, 2),
+    FreeSpaceMB DECIMAL(18, 2),
+    FreeSpacePct DECIMAL(18, 2)
+);
+
+-- Insert data into the temporary table
+EXEC sp_MSforeachdb '
+USE [?];
+INSERT INTO #FileSpaceInfo (DBName, FileType, FileName, TotalSizeMB, UsedSpaceMB, FreeSpaceMB, FreeSpacePct)
+SELECT
+    DB_NAME() AS DBName,
+    type_desc AS FileType,
+    name AS FileName,
+    CAST(size AS DECIMAL(18, 2)) / 128 AS TotalSizeMB,
+    CAST(FILEPROPERTY(name, ''SpaceUsed'') AS DECIMAL(18, 2)) / 128 AS UsedSpaceMB,
+    (CAST(size AS DECIMAL(18, 2)) - CAST(FILEPROPERTY(name, ''SpaceUsed'') AS DECIMAL(18, 2))) / 128 AS FreeSpaceMB,
+    (CAST((CAST(size AS DECIMAL(18, 2)) - CAST(FILEPROPERTY(name, ''SpaceUsed'') AS DECIMAL(18, 2))) AS DECIMAL(18, 2)) / CAST(size AS DECIMAL(18, 2)) * 100) AS FreeSpacePct
+FROM sys.database_files
+';
+
+-- Select data from the temporary table
+SELECT *
+FROM #FileSpaceInfo;
+
+-- Drop the temporary table
+DROP TABLE #FileSpaceInfo;
