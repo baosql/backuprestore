@@ -26,7 +26,7 @@ SET @path = 'G:\Backups_QAPWSDB01_45657\' -- Provide the backup path here
   )
 SELECT
 	'BACKUP DATABASE [' + name + '] TO DISK = ''' + @path + '' + name + '_COPY_ONLY_' + @date + '.bak'' WITH COMPRESSION, COPY_ONLY, STATS=5',
-    'RESTORE DATABASE ['+ name + ' ] FROM DISK = ''' + @path + '' + name + '_COPY_ONLY_' + @date + '.bak'' WITH RECOVERY, REPLACE, STATS=5 ' + movecmdCTE.MoveCmd
+    'RESTORE DATABASE ['+ name + '] FROM DISK = ''' + @path + '' + name + '_COPY_ONLY_' + @date + '.bak'' WITH RECOVERY, REPLACE, STATS=5 ' + movecmdCTE.MoveCmd
 FROM sys.databases d
 	INNER JOIN MoveCMDCTE ON d.name = movecmdcte.databasename
 WHERE d.name not in ('tempdb') --LIKE '%DatabaseName%'
