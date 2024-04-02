@@ -1,0 +1,16 @@
+As a Database Operations Manager, the responsibilities include:
+
+Strategically provisioning databases and devising appropriate high availability/disaster recovery (HA/DR) solutions aligned with the business division's Recovery Time Objective (RTO) and Recovery Point Objective (RPO).
+Overseeing the configuration, maintenance, and troubleshooting of critical database technologies such as log shipping, database mirroring, Always-On Availability Groups, and SQL Server Failover Cluster, ensuring seamless operation across single and multiple subnets.
+Leading performance tuning initiatives, addressing complex issues spanning query optimization, index efficiency, TempDB management, IO optimization, high CPU usage, and synchronization challenges in high availability environments.
+Managing the setup and configuration of SQL Server Clusters to guarantee system stability and resilience.
+Orchestrating weekly patching routines for both standalone and clustered instances to uphold security and performance standards.
+Spearheading migration and upgrade projects, orchestrating smooth transitions from legacy SQL Server versions to modern iterations (2016-2019).
+Directing the development and support of Extract, Transform, Load (ETL) processes, facilitating seamless data flow from diverse sources like Oracle, Sybase, Access, and Excel into SQL Server.
+Ensuring the integrity of database permissions and security settings to safeguard sensitive information.
+Supervising the execution of daily, weekly, monthly, and quarterly maintenance tasks, promptly resolving any encountered issues.
+Driving automation initiatives through PowerShell scripting to streamline repetitive tasks and enhance operational efficiency.
+Conducting comprehensive health checks on extensive server estates using scripted solutions to proactively identify and mitigate potential performance bottlenecks.
+Addressing database space constraints, mitigating excessive log growth, and implementing normalization techniques to optimize database structures.
+Collaborating closely with cross-functional teams to implement server, instance, and database changes in alignment with organizational objectives.
+Providing dedicated support and guidance to application owners and developers, ensuring seamless database operations and performance.
