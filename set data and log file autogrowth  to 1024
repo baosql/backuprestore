@@ -1,0 +1,17 @@
+-- For Data File
+ALTER DATABASE [YourDatabaseName]
+MODIFY FILE 
+(
+    NAME = [YourDataFileName],  -- Name of the data file
+    FILEGROWTH = 1024MB,        -- Autogrow by 1024 MB
+    MAXSIZE = UNLIMITED         -- Maximum growth unlimited
+);
+
+-- For Log File
+ALTER DATABASE [YourDatabaseName]
+MODIFY FILE 
+(
+    NAME = [YourLogFileName],   -- Name of the log file
+    FILEGROWTH = 1024MB,        -- Autogrow by 1024 MB
+    MAXSIZE = UNLIMITED         -- Maximum growth unlimited
+);
