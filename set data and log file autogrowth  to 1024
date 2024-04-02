@@ -1,17 +1,26 @@
--- For Data File
-ALTER DATABASE [YourDatabaseName]
-MODIFY FILE 
-(
-    NAME = [YourDataFileName],  -- Name of the data file
-    FILEGROWTH = 1024MB,        -- Autogrow by 1024 MB
-    MAXSIZE = UNLIMITED         -- Maximum growth unlimited
-);
+DECLARE @DatabaseName NVARCHAR(128),
+        @FileName NVARCHAR(128),
+        @FileLogicalName NVARCHAR(128),
+        @SQL NVARCHAR(MAX);
 
--- For Log File
-ALTER DATABASE [YourDatabaseName]
-MODIFY FILE 
-(
-    NAME = [YourLogFileName],   -- Name of the log file
-    FILEGROWTH = 1024MB,        -- Autogrow by 1024 MB
-    MAXSIZE = UNLIMITED         -- Maximum growth unlimited
-);
+DECLARE FileCursor CURSOR FOR
+SELECT DB_NAME(database_id) AS DatabaseName,
+       name AS FileName,
+       physical_name AS FileLogicalName
+FROM sys.master_files
+WHERE type_desc IN ('ROWS', 'LOG');
+
+OPEN FileCursor;
+
+FETCH NEXT FROM FileCursor INTO @DatabaseName, @FileName, @FileLogicalName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @SQL = 'ALTER DATABASE [' + @DatabaseName + '] MODIFY FILE (NAME = N''' + @FileLogicalName + ''', FILEGROWTH = 1024MB, MAXSIZE = UNLIMITED);';
+    EXEC sp_executesql @SQL;
+
+    FETCH NEXT FROM FileCursor INTO @DatabaseName, @FileName, @FileLogicalName;
+END
+
+CLOSE FileCursor;
+DEALLOCATE FileCursor;
