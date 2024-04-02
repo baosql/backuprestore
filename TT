@@ -14,3 +14,47 @@ Conducting comprehensive health checks on extensive server estates using scripte
 Addressing database space constraints, mitigating excessive log growth, and implementing normalization techniques to optimize database structures.
 Collaborating closely with cross-functional teams to implement server, instance, and database changes in alignment with organizational objectives.
 Providing dedicated support and guidance to application owners and developers, ensuring seamless database operations and performance.
+
+
+
+Responsibilities
+
+•	Oversee all aspects of database administration including installation, configuration, maintenance, performance tuning, capacity planning, and security.
+
+•	Implement and manage high availability and disaster recovery solutions such as log shipping, Always-On Availability Groups, and SQL Server Failover Cluster.
+
+•	Proactively identify and resolve performance issues through query optimization, index tuning, resource utilization analysis, and database schema refinement.
+
+•	Automated and Deployed Scripts for database backup and implemented backup and recovery strategies to ensure data integrity and minimize downtime in case of system failures or disasters.
+
+•	database security by implementing access controls, encryption, and auditing mechanisms to protect sensitive data from unauthorized access or breaches.
+
+•	Develop automation scripts using PowerShell or other scripting languages to streamline routine administrative tasks, improve efficiency, and reduce manual intervention.
+
+•	Monitor database growth trends and plan for future capacity requirements by analyzing resource utilization, performance metrics, and business needs.
+
+•	Database Upgrades and Migrations: Plan and execute database upgrades, migrations, and version transitions while minimizing disruption to ongoing operations.
+
+•	Documentation and Knowledge Sharing: Maintain comprehensive documentation of database configurations, procedures, and troubleshooting guides. Share knowledge and best practices with team members to enhance overall expertise and efficiency.
+
+•	Collaboration and Support: Collaborate with cross-functional teams including developers, network engineers, and system administrators to support application development, deployment, and infrastructure initiatives.
+
+Achievements:
+
+•	Led cost reduction initiative which help save over $2 million on SQL Server License Cost.
+•	Successfully implemented a high availability solution using SQL Server Always-On Availability Groups, reducing downtime and improving system reliability by 99.9%.
+
+•	Optimized database performance through proactive tuning efforts including index optimization, query rewriting, and resource allocation adjustments.
+
+•	Automated routine database maintenance tasks using PowerShell scripts, resulting in a 30% reduction in manual effort and freeing up time for strategic initiatives.
+
+
+•	Led the successful migration of a mission-critical database from on-premises infrastructure to Google Cloud Platform and AWS, improving scalability and reducing infrastructure costs by 20%.
+
+•	Implemented robust database security measures including role-based access control, data encryption, and regular security audits, ensuring compliance with industry regulations and protecting sensitive information from potential breaches.
+
+•	Provided expert guidance and support during major incidents and system outages, minimizing downtime and restoring service within agreed-upon SLA parameters.
+
+•	Mentored team members on database administration best practices, fostering professional growth and enhancing team capabilities.
+
+•	Received recognition from management for outstanding performance and contributions to the overall stability and efficiency of the organization's database environment.
