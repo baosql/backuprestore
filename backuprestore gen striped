@@ -1,0 +1,29 @@
+USE master;
+GO
+
+DECLARE @date CHAR(8) = CONVERT(CHAR(8), GETDATE(), 112);
+DECLARE @path VARCHAR(125) = 'G:\Backups_QAPWSDB01_45657\'; -- Provide the backup path here
+
+;WITH MoveCmdCTE AS (
+    SELECT DISTINCT
+        DB_NAME(database_id) AS DatabaseName,
+        STUFF((
+            SELECT CHAR(13) + ', MOVE ''' + name + '''' +
+                   CASE 
+                       WHEN Type = 0 THEN ' TO ''E:\SQLData\TESTDATA\' -- Provide SQL Data File Path here
+                       ELSE ' TO ''F:\SQLLogs\TESTDATA\' -- Provide SQL Log File Path here
+                   END +
+                   REVERSE(LEFT(REVERSE(physical_name), CHARINDEX('\', REVERSE(physical_name), 1) - 1)) + ''''
+            FROM sys.master_files sm1
+            WHERE sm1.database_id = sm2.database_id
+            FOR XML PATH(''), TYPE
+        ).value('.', 'varchar(max)'), 1, 1, '') AS MoveCmd
+    FROM sys.master_files sm2
+)
+SELECT
+    'BACKUP DATABASE [' + name + '] TO DISK = ''' + @path + name + '_COPY_ONLY_' + @date + '.bak'' WITH COMPRESSION, COPY_ONLY, STATS=5' AS BackupCmd,
+    'RESTORE DATABASE [' + name + '] FROM DISK = ''' + @path + name + '_COPY_ONLY_' + @date + '.bak'' WITH RECOVERY, REPLACE, STATS=5 ' + MoveCmdCTE.MoveCmd AS RestoreCmd
+FROM sys.databases d
+INNER JOIN MoveCmdCTE ON d.name = MoveCmdCTE.DatabaseName
+WHERE d.name NOT IN ('tempdb');
+GO
