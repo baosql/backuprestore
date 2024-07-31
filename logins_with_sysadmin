@@ -1,0 +1,22 @@
+-- TSQL to list all Logins and see if they have sys admin
+
+SELECT 
+    l.name AS LoginName,
+    l.type_desc AS LoginType,
+    l.is_disabled AS IsDisabled,
+    CASE 
+        WHEN r.name IS NOT NULL THEN 'Yes'
+        ELSE 'No'
+    END AS IsSysAdmin
+FROM 
+    sys.server_principals AS l
+LEFT JOIN 
+    sys.syslogins AS s ON l.sid = s.sid
+LEFT JOIN 
+    sys.server_role_members AS rm ON l.principal_id = rm.member_principal_id
+LEFT JOIN 
+    sys.server_principals AS r ON rm.role_principal_id = r.principal_id AND r.name = 'sysadmin'
+WHERE 
+    l.type IN ('S', 'U', 'G') -- S = SQL Server login, U = Windows login, G = Windows group
+ORDER BY 
+    LoginName;
