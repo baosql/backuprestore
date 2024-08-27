@@ -1,0 +1,29 @@
+# /etc/puppetlabs/code/environments/production/manifests/powerbi_report_server.pp
+
+class powerbi_report_server {
+
+  # Define variables
+  $installer_path = 'C:\\Temp\\PowerBIReportServer.exe'
+  $setup_arguments = '/Q /IAcceptLicenseTerms'
+
+  # Ensure the temp directory exists
+  file { 'C:\\Temp':
+    ensure => 'directory',
+  }
+
+  # Ensure the Power BI Report Server installer is present
+  # Only one declaration for the installer file
+  file { $installer_path:
+    ensure  => 'file',
+    require => File['C:\\Temp'],
+    # Uncomment and add any additional parameters if needed
+    # source => 'puppet:///modules/powerbi_report_server/PowerBIReportServer.exe',
+  }
+
+  # Run the installer silently using the explicit PowerShell path
+  exec { 'install_powerbi_report_server':
+    command => "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -Command \"Start-Process -FilePath '${installer_path}' -ArgumentList '${setup_arguments}' -Wait\"",
+  }
+
+}
+
