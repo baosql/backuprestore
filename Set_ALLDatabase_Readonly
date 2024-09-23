@@ -1,0 +1,19 @@
+DECLARE @dbName NVARCHAR(128);
+DECLARE dbCursor CURSOR FOR
+    SELECT name 
+    FROM sys.databases
+    WHERE state_desc = 'ONLINE' AND database_id > 4;  -- Exclude system databases
+
+OPEN dbCursor;
+
+FETCH NEXT FROM dbCursor INTO @dbName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    EXEC('ALTER DATABASE [' + @dbName + '] SET READ_ONLY WITH NO_WAIT');
+    
+    FETCH NEXT FROM dbCursor INTO @dbName;
+END
+
+CLOSE dbCursor;
+DEALLOCATE dbCursor;
