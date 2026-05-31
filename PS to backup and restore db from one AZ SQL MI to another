@@ -1,3 +1,5 @@
+Install-Module SqlServer -Scope CurrentUser -Force
+
 ## Backup
 Invoke-Sqlcmd `
     -ServerInstance "source-mi.public.xxxxx.database.windows.net" `
