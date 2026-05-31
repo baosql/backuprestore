@@ -1,0 +1,21 @@
+## Backup
+Invoke-Sqlcmd `
+    -ServerInstance "source-mi.public.xxxxx.database.windows.net" `
+    -Database "master" `
+    -Username $User `
+    -Password $Password `
+    -Query "
+BACKUP DATABASE MyDatabase
+TO URL='https://storageacct.blob.core.windows.net/sqlbackups/MyDatabase.bak'
+WITH COPY_ONLY, COMPRESSION, STATS=10;"
+
+
+## Restore
+Invoke-Sqlcmd `
+    -ServerInstance "target-mi.public.xxxxx.database.windows.net" `
+    -Database "master" `
+    -Username $User `
+    -Password $Password `
+    -Query "
+RESTORE DATABASE MyDatabase
+FROM URL='https://storageacct.blob.core.windows.net/sqlbackups/MyDatabase.bak';"
