@@ -1,0 +1,267 @@
+# ====================================================================================
+# Azure SQL Managed Instance -> Azure SQL Managed Instance Migration
+# Author: DBA Migration Script
+# Requirements:
+#   Install-Module dbatools -Force
+# ====================================================================================
+
+Import-Module dbatools
+
+# ====================================================================================
+# VARIABLES
+# ====================================================================================
+
+$SourceMI          = "source-mi.public.xxxxx.database.windows.net"
+$TargetMI          = "target-mi.public.xxxxx.database.windows.net"
+
+$Database          = "MyDatabase"
+
+$StorageAccount    = "sqlmigrationstorage"
+$Container         = "backups"
+
+# SAS Token WITHOUT leading '?'
+$SasToken          = "sv=2025-01-01&ss=b&srt=sco&sp=rwdlacupiytfx..."
+
+$CredentialName    = "https://$StorageAccount.blob.core.windows.net/$Container"
+$BackupFile        = "$CredentialName/$Database.bak"
+
+# ====================================================================================
+# CREDENTIALS
+# ====================================================================================
+
+$SourceCredential = Get-Credential -Message "Enter Source Managed Instance Credentials"
+$TargetCredential = Get-Credential -Message "Enter Target Managed Instance Credentials"
+
+# ====================================================================================
+# CONNECT TO MANAGED INSTANCES
+# ====================================================================================
+
+Write-Host "Connecting to Source MI..." -ForegroundColor Green
+
+$Source = Connect-DbaInstance `
+    -SqlInstance $SourceMI `
+    -SqlCredential $SourceCredential
+
+Write-Host "Connecting to Target MI..." -ForegroundColor Green
+
+$Target = Connect-DbaInstance `
+    -SqlInstance $TargetMI `
+    -SqlCredential $TargetCredential
+
+# ====================================================================================
+# CREATE STORAGE CREDENTIAL ON SOURCE & TARGET
+# ====================================================================================
+
+$CreateCredential = @"
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.credentials
+    WHERE name = '$CredentialName'
+)
+BEGIN
+    CREATE CREDENTIAL [$CredentialName]
+    WITH IDENTITY = 'SHARED ACCESS SIGNATURE',
+    SECRET = '$SasToken';
+END
+"@
+
+Write-Host "Creating Blob Credential on Source MI..." -ForegroundColor Yellow
+
+Invoke-DbaQuery `
+    -SqlInstance $Source `
+    -Database master `
+    -Query $CreateCredential
+
+Write-Host "Creating Blob Credential on Target MI..." -ForegroundColor Yellow
+
+Invoke-DbaQuery `
+    -SqlInstance $Target `
+    -Database master `
+    -Query $CreateCredential
+
+# ====================================================================================
+# BACKUP DATABASE
+# ====================================================================================
+
+$BackupQuery = @"
+BACKUP DATABASE [$Database]
+TO URL = '$BackupFile'
+WITH
+(
+    COPY_ONLY,
+    COMPRESSION,
+    CHECKSUM,
+    STATS = 10
+);
+"@
+
+Write-Host "Starting Database Backup..." -ForegroundColor Cyan
+
+Invoke-DbaQuery `
+    -SqlInstance $Source `
+    -Database master `
+    -Query $BackupQuery `
+    -QueryTimeout 0
+
+# ====================================================================================
+# VERIFY BACKUP EXISTS
+# ====================================================================================
+
+Write-Host "Verifying Backup Completion..." -ForegroundColor Cyan
+
+$BackupCheck = Invoke-DbaQuery `
+    -SqlInstance $Source `
+    -Database master `
+    -Query "
+SELECT TOP 1
+       database_name,
+       backup_finish_date,
+       backup_size/1024/1024/1024 AS BackupSizeGB
+FROM msdb.dbo.backupset
+WHERE database_name = '$Database'
+ORDER BY backup_finish_date DESC;
+"
+
+$BackupCheck | Format-Table
+
+# ====================================================================================
+# RESTORE DATABASE
+# ====================================================================================
+
+$RestoreQuery = @"
+RESTORE DATABASE [$Database]
+FROM URL = '$BackupFile'
+WITH STATS = 10;
+"@
+
+Write-Host "Starting Restore on Target MI..." -ForegroundColor Cyan
+
+Invoke-DbaQuery `
+    -SqlInstance $Target `
+    -Database master `
+    -Query $RestoreQuery `
+    -QueryTimeout 0
+
+# ====================================================================================
+# VERIFY DATABASE ONLINE
+# ====================================================================================
+
+Write-Host "Validating Restored Database..." -ForegroundColor Cyan
+
+Get-DbaDatabase `
+    -SqlInstance $Target `
+    -Database $Database |
+Select-Object Name,
+              Status,
+              RecoveryModel,
+              Size |
+Format-Table
+
+# ====================================================================================
+# COPY SQL LOGINS
+# ====================================================================================
+
+Write-Host "Migrating Logins..." -ForegroundColor Cyan
+
+Copy-DbaLogin `
+    -Source $Source `
+    -Destination $Target `
+    -ExcludeSystemLogins
+
+# ====================================================================================
+# COPY SQL AGENT JOBS
+# ====================================================================================
+
+Write-Host "Migrating SQL Agent Jobs..." -ForegroundColor Cyan
+
+Copy-DbaAgentJob `
+    -Source $Source `
+    -Destination $Target
+
+# ====================================================================================
+# COPY SQL CREDENTIALS
+# ====================================================================================
+
+Write-Host "Migrating Credentials..." -ForegroundColor Cyan
+
+Copy-DbaCredential `
+    -Source $Source `
+    -Destination $Target
+
+# ====================================================================================
+# COPY LINKED SERVERS (OPTIONAL)
+# ====================================================================================
+
+Write-Host "Migrating Linked Servers..." -ForegroundColor Cyan
+
+Copy-DbaLinkedServer `
+    -Source $Source `
+    -Destination $Target
+
+# ====================================================================================
+# ROW COUNT VALIDATION
+# ====================================================================================
+
+$ValidationQuery = @"
+SELECT
+    t.name AS TableName,
+    SUM(p.rows) AS RowCount
+FROM sys.tables t
+JOIN sys.partitions p
+    ON t.object_id = p.object_id
+WHERE p.index_id IN (0,1)
+GROUP BY t.name
+ORDER BY RowCount DESC;
+"@
+
+Write-Host "Collecting Source Row Counts..." -ForegroundColor Cyan
+
+$SourceCounts = Invoke-DbaQuery `
+    -SqlInstance $Source `
+    -Database $Database `
+    -Query $ValidationQuery
+
+Write-Host "Collecting Target Row Counts..." -ForegroundColor Cyan
+
+$TargetCounts = Invoke-DbaQuery `
+    -SqlInstance $Target `
+    -Database $Database `
+    -Query $ValidationQuery
+
+$Comparison = Compare-Object `
+    -ReferenceObject $SourceCounts `
+    -DifferenceObject $TargetCounts `
+    -Property TableName,RowCount
+
+if ($Comparison)
+{
+    Write-Warning "Differences detected between Source and Target row counts."
+    $Comparison | Format-Table
+}
+else
+{
+    Write-Host "Row Count Validation Successful." -ForegroundColor Green
+}
+
+# ====================================================================================
+# FINAL DATABASE CHECK
+# ====================================================================================
+
+Write-Host "Final Validation..." -ForegroundColor Green
+
+Get-DbaDatabase `
+    -SqlInstance $Target `
+    -Database $Database |
+Select-Object Name,
+              Status,
+              Compatibility,
+              Owner,
+              RecoveryModel,
+              Size |
+Format-Table
+
+Write-Host ""
+Write-Host "==================================================" -ForegroundColor Green
+Write-Host "Migration Completed Successfully" -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
