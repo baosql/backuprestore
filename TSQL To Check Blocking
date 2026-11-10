@@ -1,0 +1,59 @@
+SELECT
+    blocked.session_id AS blocked_session_id,
+    DB_NAME(blocked.database_id) AS blocked_database,
+    blocked_session.login_name AS blocked_login,
+    blocked_session.program_name AS blocked_application,
+    blocked.status AS blocked_status,
+    blocked.wait_type,
+    CAST(blocked.wait_time / 1000.0 AS decimal(18,1)) AS wait_seconds,
+    blocked.wait_resource,
+
+    SUBSTRING(
+        blocked_sql.text,
+        blocked.statement_start_offset / 2 + 1,
+        (CASE
+            WHEN blocked.statement_end_offset = -1
+                THEN DATALENGTH(blocked_sql.text)
+            ELSE blocked.statement_end_offset
+         END - blocked.statement_start_offset) / 2 + 1
+    ) AS blocked_current_statement,
+
+    blocked.blocking_session_id,
+    DB_NAME(COALESCE(blocker.database_id, blocker_session.database_id))
+        AS blocker_database,
+    blocker_session.login_name AS blocker_login,
+    blocker_session.host_name AS blocker_host,
+    blocker_session.program_name AS blocker_application,
+    blocker_session.status AS blocker_session_status,
+    blocker.status AS blocker_request_status,
+    blocker.wait_type AS blocker_wait_type,
+    blocker.blocking_session_id AS blocker_also_blocked_by,
+    blocker_session.open_transaction_count AS blocker_open_transactions,
+
+    SUBSTRING(
+        blocker_sql.text,
+        blocker.statement_start_offset / 2 + 1,
+        (CASE
+            WHEN blocker.statement_end_offset = -1
+                THEN DATALENGTH(blocker_sql.text)
+            ELSE blocker.statement_end_offset
+         END - blocker.statement_start_offset) / 2 + 1
+    ) AS blocker_current_statement,
+
+    blocker_sql.text AS blocker_full_batch,
+    blocker_input.event_info AS blocker_last_submitted_command
+
+FROM sys.dm_exec_requests AS blocked
+JOIN sys.dm_exec_sessions AS blocked_session
+    ON blocked_session.session_id = blocked.session_id
+LEFT JOIN sys.dm_exec_sessions AS blocker_session
+    ON blocker_session.session_id = blocked.blocking_session_id
+LEFT JOIN sys.dm_exec_requests AS blocker
+    ON blocker.session_id = blocked.blocking_session_id
+OUTER APPLY sys.dm_exec_sql_text(blocked.sql_handle) AS blocked_sql
+OUTER APPLY sys.dm_exec_sql_text(blocker.sql_handle) AS blocker_sql
+OUTER APPLY sys.dm_exec_input_buffer(
+    blocker_session.session_id, NULL
+) AS blocker_input
+WHERE blocked.blocking_session_id <> 0
+ORDER BY blocked.wait_time DESC;
